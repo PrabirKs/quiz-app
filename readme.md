@@ -93,7 +93,7 @@ quiz-app/
 ## 🔐 Login Credentials
 
 - **Username**: `admin`
-- **Password**: `satya@1234`
+- **Password**: `1234`
 
 > Credentials are hardcoded in `js/auth.js`
 
