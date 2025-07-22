@@ -1,16 +1,20 @@
 const questions = JSON.parse(localStorage.getItem("quizQuestions"));
 const answers = JSON.parse(localStorage.getItem("quizAnswers"));
 const duration = parseInt(localStorage.getItem("quizDuration"));
+const startTime = parseInt(localStorage.getItem("quizStartTime"));
 
 let currentQuestion = 0;
 const userAnswers = {};
 const totalQuestions = questions.length;
-
 const container = document.getElementById("testContainer");
+const timerDisplay = document.getElementById("timerDisplay");
 
 function renderQuestion(index) {
   const q = questions[index];
   container.innerHTML = `
+    <div class="d-flex justify-content-end mb-3">
+      <span class="badge bg-primary p-2 fs-6" id="timerDisplay">Time Left: --:--</span>
+    </div>
     <div class="card p-4">
       <h4>Question ${index + 1} of ${totalQuestions}</h4>
       <p>${q.question}</p>
@@ -25,6 +29,8 @@ function renderQuestion(index) {
       </div>
     </div>
   `;
+  // Reattach the timer display after rerender
+  startTimerCountdown();
 }
 
 function saveAndNext() {
@@ -37,8 +43,7 @@ function saveAndNext() {
     currentQuestion++;
     renderQuestion(currentQuestion);
   } else {
-    localStorage.setItem("userAnswers", JSON.stringify(userAnswers));
-    window.location.href = "result.html";
+    submitTest();
   }
 }
 
@@ -49,17 +54,35 @@ function prevQuestion() {
   }
 }
 
-function startTimer(minutes) {
-  let timeLeft = minutes * 60;
-  const timer = setInterval(() => {
-    timeLeft--;
-    if (timeLeft <= 0) {
-      clearInterval(timer);
-      localStorage.setItem("userAnswers", JSON.stringify(userAnswers));
-      window.location.href = "result.html";
-    }
-  }, 1000);
+function submitTest() {
+  localStorage.setItem("userAnswers", JSON.stringify(userAnswers));
+  localStorage.setItem("quizEndTime", Date.now()); // ✅ Save end time
+  window.location.href = "result.html";
 }
 
-renderQuestion(currentQuestion);
-startTimer(duration);
+
+function startTimerCountdown() {
+  const timerDisplay = document.getElementById("timerDisplay");
+  const testDurationMs = duration * 60 * 1000;
+  const timeEnd = startTime + testDurationMs;
+
+  function updateTimer() {
+    const now = Date.now();
+    const timeLeft = Math.max(0, timeEnd - now);
+
+    const minutes = Math.floor(timeLeft / 60000);
+    const seconds = Math.floor((timeLeft % 60000) / 1000);
+    timerDisplay.textContent = `Time Left: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      alert("⏰ Time's up!");
+      submitTest();
+    }
+  }
+
+  updateTimer();
+  const timerInterval = setInterval(updateTimer, 1000);
+}
+
+renderQuestion(currentQuestion); // Also calls timer setup
